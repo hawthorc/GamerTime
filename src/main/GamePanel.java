@@ -10,6 +10,7 @@ import java.awt.Graphics2D;
 import javax.swing.JPanel;
 
 import entity.Player;
+import network.NetworkHandler;
 
 @SuppressWarnings("serial")
 public class GamePanel extends JPanel implements Runnable {
@@ -29,12 +30,22 @@ public class GamePanel extends JPanel implements Runnable {
 	final int screenWidth = tileSize * maxScreenCol;
 	final int screenHeight = tileSize * maxScreenRow;
 	
-	final int FPS = 60;
+	final int FPS = 30;
 	
-	KeyHandler keyH = new KeyHandler();
+	KeyHandler keyH = new KeyHandler(this);
+	public UI ui = new UI(this);
+	NetworkHandler network = new NetworkHandler(this);
 	Thread gameThread;
+	
+	// entity + object ------------------------------------------------------
 	Player player = new Player(this,keyH);
 	
+	// Game state -----------------------------------------------------------
+	// could be enum?
+	public int gameState;
+	public final int mainMenu = 0;
+	public final int play = 1;
+	public final int paused = 2;
 	
 	public GamePanel() {
 		this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -44,6 +55,10 @@ public class GamePanel extends JPanel implements Runnable {
 		this.setFocusable(true);
 	}
 
+	public void setup() {
+		gameState = mainMenu;
+	}
+	
 	
 	public void startGameThread() {
 		gameThread = new Thread(this);
@@ -78,17 +93,30 @@ public class GamePanel extends JPanel implements Runnable {
 
 	public void update() {
 
-		player.update();
+		if (gameState == play) {
+			player.update();
+		} else if (gameState == paused) {
+			// no update
+		}
 	}
 
 	
 	public void paintComponent(Graphics g) {
 		
 		super.paintComponent(g);
-		
 		Graphics2D g2 = (Graphics2D)g;
 		
-		player.draw(g2);
+		if (gameState == mainMenu) {
+			ui.draw(g2);
+		} else {
+			// tile + object stuff goes here
+			
+			player.draw(g2);
+			
+			// add stuff to HUD!!
+			ui.draw(g2);
+		}
+		
 		g2.dispose();
 	}
 }
