@@ -12,16 +12,15 @@ public class NetworkHandler {
 	private Server server;
 	private Client client;
 
-	
 
 	public NetworkHandler(GamePanel gp) {
 		this.gp = gp;
 	}
 	
 
-	public String startServer() {
+	public String startServer(int port) {
         try {
-            server = new Server(this); // Pass reference for message handling
+            server = new Server(this, port); // Pass reference for message handling
             server.start();
             return InetAddress.getLocalHost().getHostAddress();
         } catch (Exception e) {
@@ -31,41 +30,72 @@ public class NetworkHandler {
     }
 	
 
-    public String startClient(String address) {
+    public String startClient(String address, int port) {
         try {
-            client = new Client(address, this);
-            return "Client connected to server at: " + address;
+            client = new Client(address, port);
+            System.out.println("Client connected to server at: " + address + ", port " + port);
+            return "Client connected";
         } catch (Exception e) {
             e.printStackTrace();
             return "Failed to connect client.";
         }
     }
 
-    
-    public void sendMessage(String msg) {
+    // for now, data should just be position (x,y)
+    // TODO: add a packet class for structuring data
+    public void sendUpdate(InputPacket input, boolean first) {
         if (client != null) {
-            try {
-                client.sendEcho(msg); // Send message and wait for echo.
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        	if (!first) {
+	            try {
+	            	byte[] buf = new byte[4];
+	                buf[0] = (byte) (input.up ? 1 : 0);
+	                buf[1] = (byte) (input.down ? 1 : 0);
+	                buf[2] = (byte) (input.left ? 1 : 0);
+	                buf[3] = (byte) (input.right ? 1 : 0);
+	                client.sendUpdate(buf);
+	            } catch (IOException e) {
+	                e.printStackTrace();
+	            }
+        	} else {
+        		// first contact, let the server know that it should join
+        		try {
+	        		byte[] buf = new byte[4];
+	        		buf[0] = (byte) 2;
+	        		client.sendUpdate(buf);
+        		} catch (IOException e) {
+	                e.printStackTrace();
+	            }
+        	}
         } else {
             System.out.println("Client is not connected.");
         }
     }
 
-    
-    public void handleReceivedMessage(String msg) {
-        // Handle messages received from either server or client
-        // This could involve updating game states, triggering UI updates, etc.
-        //gp.updateGameWithReceivedMessage(msg);
+    // TODO: modify to receive Packet class packets
+    public void handleReceivedMessage(byte[] buf) {
+    	// client connected, connect to their server
+    	if (buf[0] == 2) {
+    		gp.joinServer("10.0.0.87", gp.port2);
+    	}
+    	else {
+    		// retrieve the input information
+        	boolean up = buf[0] == 1;
+            boolean down = buf[1] == 1;
+            boolean left = buf[2] == 1;
+            boolean right = buf[3] == 1;
+
+            System.out.println(up + ", " + down + ", " + left + ", " + right);
+            gp.updateRemotePlayer(up, down, left, right); 
+    	}    
     }
 
     public void closeClient() {
         // close client handling
+    	client.close();
     }
 
     public void stopServer() {
         // stop server handling
+    	server.stopServer();
     }
-}
+} 

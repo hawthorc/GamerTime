@@ -6,6 +6,8 @@ package main;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
+import javax.swing.JOptionPane;
+
 public class KeyHandler implements KeyListener{
 	
 	GamePanel gp;
@@ -48,14 +50,24 @@ public class KeyHandler implements KeyListener{
 						gp.gameState = gp.play;
 						// load music, potential other tasks
 					}
-					else if (gp.ui.commandNum == 1) gp.ui.mainMenuState = 1;
-					else if (gp.ui.commandNum == 2) gp.ui.mainMenuState = 2;
+					else if (gp.ui.commandNum == 1) {
+						//gp.ui.mainMenuState = 1;
+                        gp.startServer(gp.port1);
+					}
+					else if (gp.ui.commandNum == 2) {
+						//gp.ui.mainMenuState = 2;
+						String serverAddress = JOptionPane.showInputDialog("Enter server address:");
+                        gp.joinServer(serverAddress, gp.port1); // Join server directly
+                        // start a server that the other player can connect to for P2P
+                        gp.startServer(gp.port2);
+					}
+					break;
 				}
-			} else if (gp.ui.mainMenuState == 1) {
+			} /*else if (gp.ui.mainMenuState == 1) {
 				
 			} else if (gp.ui.mainMenuState == 2) {
 				
-			}
+			}*/
 
 		} else if (gp.gameState == gp.play) {
 			switch (key) {
@@ -83,9 +95,10 @@ public class KeyHandler implements KeyListener{
 				
 			case KeyEvent.VK_P:
 				if (gp.gameState == gp.play) gp.gameState = gp.paused;
-				else if (gp.gameState == gp.paused) gp.gameState = gp.play;
 				break;
 			}
+		} else if (gp.gameState == gp.paused) {
+			if (key == KeyEvent.VK_P) gp.gameState = gp.play;
 		}
 		
 

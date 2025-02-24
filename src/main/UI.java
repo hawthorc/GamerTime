@@ -77,11 +77,11 @@ public class UI {
 			if (commandNum == 2) {
 				g2.drawString(">", x-gp.tileSize, y);
 			}
-		} else if (mainMenuState == 1) {
+		} /*else if (mainMenuState == 1) {
 			// SERVER STUFF
 		} else if (mainMenuState == 2) {
 			// CLIENT STUFF
-		}
+		}*/
 	}
 	public void drawPause() {
 		String message = "PAUSED";

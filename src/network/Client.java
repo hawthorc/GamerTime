@@ -10,26 +10,27 @@ import java.net.UnknownHostException;
 public class Client {
 	private DatagramSocket socket;
     private InetAddress address;
-    private NetworkHandler networkHandler;
+    private int port;
+    //private NetworkHandler networkHandler;
 
-    private byte[] buf;
-
-    public Client(String address, NetworkHandler networkHandler) throws SocketException, UnknownHostException {
-        this.networkHandler = networkHandler;
+    public Client(String address, int port) throws SocketException, UnknownHostException {
+        //this.networkHandler = networkHandler;
     	this.address = InetAddress.getByName(address);
+    	this.port = port;
         socket = new DatagramSocket();
     }
 
 
-    public void sendEcho(String msg) throws IOException {
-        buf = msg.getBytes();
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, 4445);
+    public void sendUpdate(byte[] buf) throws IOException {
+    	// create a byte array to send the integers
+    	// TODO: create packet class that handles data in this way
+        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
         socket.send(packet);
-        packet = new DatagramPacket(buf, buf.length);
+        /*packet = new DatagramPacket(buf, buf.length);
         socket.receive(packet);
         
         String received = new String(packet.getData(), 0, packet.getLength());
-        networkHandler.handleReceivedMessage(received);
+        networkHandler.handleReceivedMessage(received);*/
     }
 
     public void close() {
