@@ -11,6 +11,8 @@ public class NetworkHandler {
 	private GamePanel gp;
 	private Server server;
 	private Client client;
+	
+	public InetAddress p2Address = null;
 
 
 	public NetworkHandler(GamePanel gp) {
@@ -59,8 +61,8 @@ public class NetworkHandler {
         	} else {
         		// first contact, let the server know that it should join
         		try {
-	        		byte[] buf = new byte[4];
-	        		buf[0] = (byte) 2;
+        			byte[] buf = new byte[1];
+	                buf[0] = (byte) 2;
 	        		client.sendUpdate(buf);
         		} catch (IOException e) {
 	                e.printStackTrace();
@@ -75,7 +77,8 @@ public class NetworkHandler {
     public void handleReceivedMessage(byte[] buf) {
     	// client connected, connect to their server
     	if (buf[0] == 2) {
-    		gp.joinServer("10.0.0.87", gp.port2);
+            // join player 2's server to complete the 2-way connection
+    		gp.joinServer(p2Address.getHostAddress(), gp.port2);
     	}
     	else {
     		// retrieve the input information

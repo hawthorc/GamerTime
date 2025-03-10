@@ -12,7 +12,7 @@ public class Server extends Thread{
     private NetworkHandler networkHandler;
     private boolean running;
 
-    private byte[] buf = new byte[4];
+    private byte[] buf = new byte[16];
 
     public Server(NetworkHandler networkHandler, int port) throws SocketException {
         this.networkHandler = networkHandler;
@@ -36,7 +36,7 @@ public class Server extends Thread{
             int port = packet.getPort();
             packet = new DatagramPacket(buf, buf.length, address, port);
             String received = new String(packet.getData(), 0, packet.getLength());*/
-
+			if (networkHandler.p2Address == null) networkHandler.p2Address = packet.getAddress();
             networkHandler.handleReceivedMessage(buf);
             
            /*if (received.equals("end")) {

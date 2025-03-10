@@ -52,10 +52,12 @@ public class KeyHandler implements KeyListener{
 					}
 					else if (gp.ui.commandNum == 1) {
 						//gp.ui.mainMenuState = 1;
+						// should be moved to gp?
                         gp.startServer(gp.port1);
 					}
 					else if (gp.ui.commandNum == 2) {
 						//gp.ui.mainMenuState = 2;
+						// should be moved to gp?
 						String serverAddress = JOptionPane.showInputDialog("Enter server address:");
                         gp.joinServer(serverAddress, gp.port1); // Join server directly
                         // start a server that the other player can connect to for P2P

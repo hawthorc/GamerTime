@@ -9,9 +9,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 //import java.io.IOException;
 
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import entity.Player;
+import entity.NPC;
 import network.InputPacket;
 import network.NetworkHandler;
 
@@ -21,7 +23,7 @@ public class GamePanel extends JPanel implements Runnable {
 	public int port1 = 4445;
 	public int port2 = 4446;
 
-	public boolean up, down, left, right;
+	//public boolean up, down, left, right;
 	
 	final int orgTileSize = 16;
 	final int scale = 3;	// scaling for modern resolutions
@@ -36,7 +38,7 @@ public class GamePanel extends JPanel implements Runnable {
 	final int screenWidth = tileSize * maxScreenCol;
 	final int screenHeight = tileSize * maxScreenRow;
 	
-	final int FPS = 30;
+	final int FPS = 60;
 	
 	KeyHandler keyH = new KeyHandler(this);
 	public UI ui = new UI(this);
@@ -46,6 +48,7 @@ public class GamePanel extends JPanel implements Runnable {
 	// entity + object ------------------------------------------------------
 	Player player1;
 	Player player2;
+	NPC testNPC;
 	
 	// Game state -----------------------------------------------------------
 	// could be enum?
@@ -76,9 +79,12 @@ public class GamePanel extends JPanel implements Runnable {
 	
 	
 	public void startServer(int port) {
-	    System.out.println(network.startServer(port) + ", " + port);
-	    // coordinate player colors based on who started the server first
-	    if (port == port1) player1 = new Player(this, keyH, Color.BLUE);
+	    String startMessage = "Server started on " + network.startServer(port);
+	    if (port == port1) {
+	    	JOptionPane.showMessageDialog(null, startMessage);
+	    	// coordinate player colors based on who started the server first
+		    if (port == port1) player1 = new Player(this, keyH, Color.BLUE);
+	    }
 	    //else player1 = new Player(this, keyH, Color.GREEN);
 	    //gameState = play; // Change game state to start playing
 	}
@@ -96,7 +102,11 @@ public class GamePanel extends JPanel implements Runnable {
 	    		// first player joining the second
 	    		player2 = new Player(this, null, Color.GREEN);
 	    	}
+	    	testNPC = new NPC(this, Color.RED);
 	    	gameState = play;
+	    }
+	    else {
+	    	System.out.println("Something went wrong, didn't connect to server?");
 	    }
 	    //gameState = play; // Change game state to start playing
 	}
@@ -132,9 +142,11 @@ public class GamePanel extends JPanel implements Runnable {
 			player1.update();
 			// only send update if there is another player connected
 			if (player2 != null) {
-				InputPacket input = new InputPacket(up, down, left, right);
+				InputPacket input = new InputPacket(keyH.up, keyH.down, keyH.left, keyH.right);
 			    network.sendUpdate(input, false);
 			}
+			testNPC.updatePosition();
+			
 		} else if (gameState == paused) {
 			// no update
 		}
@@ -162,6 +174,8 @@ public class GamePanel extends JPanel implements Runnable {
 			player1.draw(g2);
 			// potentially change this so that the game can't be played solo?
 			if (player2 != null) player2.draw(g2);
+			
+			testNPC.draw(g2);
 			
 			// add stuff to HUD!!
 			ui.draw(g2);
