@@ -16,6 +16,7 @@ import entity.Player;
 import entity.NPC;
 import network.InputPacket;
 import network.NetworkHandler;
+import tile.TileHandler;
 
 @SuppressWarnings("serial")
 public class GamePanel extends JPanel implements Runnable {
@@ -31,24 +32,33 @@ public class GamePanel extends JPanel implements Runnable {
 	public final int tileSize = orgTileSize * scale;
 	
 	// CHANGE THESE TO CHANGE SCREEN SIZE
-	final int maxScreenCol = 16;
-	final int maxScreenRow = 12;
+	public final int maxScreenCol = 16;
+	public final int maxScreenRow = 12;
 	
 	// 768 x 576 pixels
-	final int screenWidth = tileSize * maxScreenCol;
-	final int screenHeight = tileSize * maxScreenRow;
+	public final int screenWidth = tileSize * maxScreenCol;
+	public final int screenHeight = tileSize * maxScreenRow;
+	
+	// WORLD SETTINGS--------------------------------------------------------
+	public final int maxWorldRow = 50;
+	public final int maxWorldCol = 50;
+	public final int worldWidth = tileSize * maxWorldCol;
+	public final int worldHeight = tileSize * maxWorldRow;
+	
 	
 	final int FPS = 60;
 	
+	
+	TileHandler tileH = new TileHandler(this);
 	KeyHandler keyH = new KeyHandler(this);
 	public UI ui = new UI(this);
 	NetworkHandler network = new NetworkHandler(this);
 	Thread gameThread;
 	
+	
 	// entity + object ------------------------------------------------------
-	Player player1;
+	public Player player1;
 	Player player2;
-	NPC testNPC;
 	
 	// Game state -----------------------------------------------------------
 	// could be enum?
@@ -78,6 +88,18 @@ public class GamePanel extends JPanel implements Runnable {
 	}
 	
 	
+	// start a non-network / multiplayer game
+	// just for testing?
+	// player1's color, etc could be changed for player 2
+	// perhaps having a separate function will be good as features are added
+	public void startSolo() {
+		// set up player 1 for gameplay -- potentially just initialize player1 and do away with this function?
+		player1 = new Player(this, keyH, Color.BLUE);
+		gameState = play;
+	}
+
+	
+	// start a server for the other player to join
 	public void startServer(int port) {
 	    String startMessage = "Server started on " + network.startServer(port);
 	    if (port == port1) {
@@ -89,7 +111,8 @@ public class GamePanel extends JPanel implements Runnable {
 	    //gameState = play; // Change game state to start playing
 	}
 
-
+	
+	// join the other player's server
 	public void joinServer(String address, int port) {
 	    if (network.startClient(address, port).equals("Client connected")) {
 	    	if (port == port1) {
@@ -102,7 +125,6 @@ public class GamePanel extends JPanel implements Runnable {
 	    		// first player joining the second
 	    		player2 = new Player(this, null, Color.GREEN);
 	    	}
-	    	testNPC = new NPC(this, Color.RED);
 	    	gameState = play;
 	    }
 	    else {
@@ -145,7 +167,6 @@ public class GamePanel extends JPanel implements Runnable {
 				InputPacket input = new InputPacket(keyH.up, keyH.down, keyH.left, keyH.right);
 			    network.sendUpdate(input, false);
 			}
-			testNPC.updatePosition();
 			
 		} else if (gameState == paused) {
 			// no update
@@ -170,12 +191,12 @@ public class GamePanel extends JPanel implements Runnable {
 			ui.draw(g2);
 		} else {
 			// tile + object stuff goes here
+			tileH.draw(g2);
 			
 			player1.draw(g2);
 			// potentially change this so that the game can't be played solo?
 			if (player2 != null) player2.draw(g2);
-			
-			testNPC.draw(g2);
+
 			
 			// add stuff to HUD!!
 			ui.draw(g2);

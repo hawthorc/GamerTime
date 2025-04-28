@@ -27,26 +27,27 @@ public class NPC extends Entity{
 	
 
 	public void setDefaultValues() {
-		x = 200;
-		y = 200;
+		worldX = 200;
+		worldY = 200;
 		speed = 2;  // unnecessary?
 		left = false;
 	}
 	
 	
-	public void updatePosition() {
+	// NPC movement test method, causes the character to move back and forth on the screen
+	public void updatePositionTest() {
 		if (left) {
-			x -= 2;
-			if (x <= 20) left = false;
+			worldX -= 2;
+			if (worldX <= 20) left = false;
 		}
 		else {
-			x += 2;
-			if (x >= 400) left = true;
+			worldX += 2;
+			if (worldX >= 400) left = true;
 		}
 	}
 
 	public void draw(Graphics2D g2) {
 		g2.setColor(color);
-		g2.fillOval(x, y, gp.tileSize, gp.tileSize);
+		g2.fillOval(worldX, worldY, gp.tileSize, gp.tileSize);
 	}
 }
