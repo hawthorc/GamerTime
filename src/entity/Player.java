@@ -5,6 +5,7 @@ package entity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
@@ -30,9 +31,19 @@ public class Player extends Entity {
 		this.keyH = keyH;
 		screenX = gp.screenWidth/2 - (gp.tileSize/2);				// player position is based on top left corner, so subtract half a tile
 		screenY = gp.screenHeight/2 - (gp.tileSize/2);
-		this.color = color;
+		
+		//this.color = color;											// only use until sprites are added
+		
+		// set the collision area of the sprite
+		// gp.tileSize = 48, so twoThirds = 32 (int)
+		// using math value instead of hard number for scaling
+		double tileSize = gp.tileSize;
+		int twoThirds = (int) Math.round(tileSize * (2.0 / 3.0));
+		solidArea = new Rectangle(gp.tileSize/6, gp.tileSize/3, twoThirds, twoThirds);
+		//solidArea = new Rectangle(8, 16, 32, 32);
+		
 		setDefaultValues();
-		// getPlayerImage;
+		getPlayerImage();
 	}
 	
 	
@@ -77,25 +88,34 @@ public class Player extends Entity {
 	private void updateMovement(boolean up, boolean down, boolean left, boolean right) {
 		
 		// only update animation if the player is moving
-		if (up == true || down == true || left == true || right == true) {
-			int xVec = 0, yVec = 0;
-			
-			// 0,0 is in the top left corner, so up / down are swapped
-			if (up == true)	{
-				yVec = -1;
-				direction = "up";					// change these to use the first direction inputted? i.e. if player is going up and right, the "up" sprite will be used
-			}										// but if player goes right and up, "right" sprite will be used
-			if (down == true) {
-				yVec = 1;
-				direction = "down";
+		if (up || down|| left || right) {
+			int xVec = 0;
+			int yVec = 0;
+			// check tile collision
+			// change to check for left and right collision?
+			colliding = false;
+			gp.collisionH.checkTile(this, up, down, left, right);
+			// check tile will set collision to true if it detects solid tiles
+			if (colliding == false) {
+				// switch statement instead? keep it like this for now in case we need to extra account for diagonal
+				if (up) {
+					yVec = -1;
+					direction = "up";					// change these to use the first direction input? i.e. if player is going up and right, the "up" sprite will be used
+														// but if player goes right and up, "right" sprite will be used
+				}		
+				if (down) {
+					yVec = 1;
+					direction = "down";
+				}
+				if (left) {
+					xVec = -1;
+					direction = "left";
+				}
+				if (right) {
+					xVec = 1;
+					direction = "right";
+				}
 			}
-			if (left == true) {
-				xVec = -1;
-				direction = "left";
-			}
-			if (right == true) {
-				xVec = 1;
-				direction = "right";		}
 			
 			// diagonal movement (avoid moving faster due to Pythagoras)
 			if(xVec != 0 && yVec != 0) {
@@ -117,7 +137,6 @@ public class Player extends Entity {
 
 	public void draw(Graphics2D g2) {
 		g2.setColor(color);
-		g2.fillRect(screenX, screenY, gp.tileSize, gp.tileSize);
 		
 		BufferedImage image = null;
 		switch(direction) {
@@ -142,7 +161,18 @@ public class Player extends Entity {
 			} else image = right2;
 			break;
 		}
-		// TODO: add player sprites and use this line!!!
-		//g2.drawImage(image, screenX, screemY, gp.tileSize, gp.tileSize, null);
+		// player sprite
+		g2.drawImage(image, screenX, screenY, gp.tileSize, gp.tileSize, null);
+		
+		// draw the collision rectangle
+		/*int collisionX = worldX + solidArea.x;
+	    int collisionY = worldY + solidArea.y;
+
+	    // Convert world coordinates to screen coordinates
+	    int collisionScreenX = screenX + (collisionX - worldX);
+	    int collisionScreenY = screenY + (collisionY - worldY);
+
+	    g2.setColor(Color.red);
+	    g2.drawRect(collisionScreenX, collisionScreenY, solidArea.width, solidArea.height);*/
 	}
 }

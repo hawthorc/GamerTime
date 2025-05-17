@@ -16,17 +16,16 @@ import main.GamePanel;
 public class TileHandler {
 	
 	GamePanel gp;
-	Tile[] tile;
-	int mapTileNum[][];
+	public Tile[] tile;
+	public int mapTileNum[][];
 	
 	
 	public TileHandler(GamePanel gp) {
 		
 		this.gp = gp;
-		tile = new Tile[10];										// num of different tile types, 10 is a placeholder for now
-		mapTileNum = new int[gp.maxWorldRow][gp.maxWorldCol];
+		tile = new Tile[10];											// num of different tile types, 10 is a placeholder for now
+		mapTileNum = new int[gp.maxWorldCol][gp.maxWorldRow];
 		getTileImage();
-		//loadMap("/maps/map01.txt");
 		loadMap("/maps/test_world.txt");								// ready the mapTileNum array so that the map can be drawn
 	}
 	
@@ -39,9 +38,14 @@ public class TileHandler {
 			
 			tile[1] = new Tile();
 			tile[1].image = ImageIO.read(getClass().getResourceAsStream("/tiles/stone.png"));
+			tile[1].collision = true;
 			
 			tile[2] = new Tile();
 			tile[2].image = ImageIO.read(getClass().getResourceAsStream("/tiles/water.png"));
+			tile[2].collision = true;
+			
+			tile[3] = new Tile();
+			tile[3].image = ImageIO.read(getClass().getResourceAsStream("/tiles/dirt.png"));
 			
 		}catch(IOException e) {
 			e.printStackTrace();
@@ -63,10 +67,12 @@ public class TileHandler {
 				
 				String line = br.readLine();
 				while (col < gp.maxWorldCol) {
-					String nums[] = line.split(" ");							// numbers in the map text file are separated by spaces
+					// numbers in the map text file are separated by spaces
+					// account for general whitespace just in case
+					String nums[] = line.split("\\s+");		
 					int num = Integer.parseInt(nums[col]);
 					
-					mapTileNum[row][col] = num;
+					mapTileNum[col][row] = num;
 					col++;
 				}
 				// end of the line, reset to next one
@@ -90,7 +96,7 @@ public class TileHandler {
 		
 		while (worldRow < gp.maxWorldRow && worldCol < gp.maxWorldCol) {
 			
-			int tileNum = mapTileNum[worldRow][worldCol];
+			int tileNum = mapTileNum[worldCol][worldRow];
 			
 			// get the position on the world map
 			int worldX = worldCol * gp.tileSize;
