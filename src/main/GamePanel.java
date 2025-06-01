@@ -13,7 +13,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import entity.Player;
-import entity.NPC;
+import item.Item;
+//import entity.NPC;
 import network.InputPacket;
 import network.NetworkHandler;
 import tile.TileHandler;
@@ -56,17 +57,22 @@ public class GamePanel extends JPanel implements Runnable {
 	public UI ui = new UI(this);
 	Thread gameThread;
 	
+	public ItemHandler itemH = new ItemHandler(this);
+	public Item items[] = new Item[10];								// object array, can adjust size as needed
+	
 	
 	// entity + object ------------------------------------------------------
-	public Player player1;
-	Player player2;
+	public Player localPlayer;
+	Player remotePlayer;
 	
 	// Game state -----------------------------------------------------------
 	// could be enum?
 	public int gameState;
 	public final int mainMenu = 0;
 	public final int play = 1;
-	public final int paused = 2;
+	public final int pause = 2;
+	
+	public boolean paused = false;
 	
 
 	public GamePanel() {
@@ -80,6 +86,7 @@ public class GamePanel extends JPanel implements Runnable {
 	
 	public void setup() {
 		gameState = mainMenu;
+		itemH.setItems();
 	}
 	
 	
@@ -95,7 +102,7 @@ public class GamePanel extends JPanel implements Runnable {
 	// perhaps having a separate function will be good as features are added
 	public void startSolo() {
 		// set up player 1 for gameplay -- potentially just initialize player1 and do away with this function?
-		player1 = new Player(this, keyH, Color.BLUE);
+		localPlayer = new Player(this, keyH, true, true);
 		gameState = play;
 	}
 
@@ -106,7 +113,7 @@ public class GamePanel extends JPanel implements Runnable {
 	    if (port == port1) {
 	    	JOptionPane.showMessageDialog(null, startMessage);
 	    	// coordinate player colors based on who started the server first
-		    if (port == port1) player1 = new Player(this, keyH, Color.BLUE);
+		    if (port == port1) localPlayer = new Player(this, keyH, true, true);
 	    }
 	    //else player1 = new Player(this, keyH, Color.GREEN);
 	    //gameState = play; // Change game state to start playing
@@ -118,13 +125,13 @@ public class GamePanel extends JPanel implements Runnable {
 	    if (network.startClient(address, port).equals("Client connected")) {
 	    	if (port == port1) {
 	    		// second player joining the first
-	    		player1 = new Player(this, keyH, Color.GREEN);
-	    		player2 = new Player(this, null, Color.BLUE);
+	    		localPlayer = new Player(this, keyH, true, false);
+	    		remotePlayer = new Player(this, null, false, true);
 	    		// special first contact packet to let the server know it should join p2 client
 	    		network.sendUpdate(null, true);
 	    	} else {
 	    		// first player joining the second
-	    		player2 = new Player(this, null, Color.GREEN);
+	    		remotePlayer = new Player(this, null, false, false);
 	    	}
 	    	gameState = play;
 	    }
@@ -162,24 +169,47 @@ public class GamePanel extends JPanel implements Runnable {
 	// update the player position
 	public void update() {
 		if (gameState == play) {
-			player1.update();
-			// only send update if there is another player connected
-			if (player2 != null) {
-				InputPacket input = new InputPacket(keyH.up, keyH.down, keyH.left, keyH.right);
-			    network.sendUpdate(input, false);
+			if (!paused) {
+				localPlayer.update();
+				// only send update if there is another player connected
+				if (remotePlayer != null) {
+					InputPacket input = new InputPacket(keyH.up, keyH.down, keyH.left, keyH.right, false);
+				    network.sendUpdate(input, false);
+				}
 			}
-			
-		} else if (gameState == paused) {
+		} else if (gameState == pause) {
 			// no update
 		}
 	}
+	
+	
+	public void setPaused(boolean p) {
+        if (p != paused) { // only update if state changes
+            paused = p;
+            if (paused){
+              // send pause signal to remote player
+                if (remotePlayer != null) {
+                    InputPacket input = new InputPacket(false, false, false, false, true);
+                    network.sendUpdate(input, false);
+                }
+                gameState = pause;
+            } else {
+              // send resume signal to remote player
+                if (remotePlayer != null) {
+                    InputPacket input = new InputPacket(false, false, false, false, false);
+                    network.sendUpdate(input, false);
+                }
+                gameState = play;
+            }
+        }
+    }
 	
 
 	// update the remote player's position
 	public void updateRemotePlayer(boolean up, boolean down, boolean left, boolean right) {
 		// TODO: add gameState checks?
-		if (player2 != null) {
-			player2.handleRemoteInput(up, down, left, right);
+		if (remotePlayer != null) {
+			remotePlayer.handleRemoteInput(up, down, left, right);
 		}
 	}
 
@@ -194,9 +224,13 @@ public class GamePanel extends JPanel implements Runnable {
 			// tile + object stuff goes here
 			tileH.draw(g2);
 			
-			player1.draw(g2);
+			for (int i = 0; i < items.length; i++) {
+				if (items[i] != null) items[i].draw(g2, this);
+			}
+			
 			// potentially change this so that the game can't be played solo?
-			if (player2 != null) player2.draw(g2);
+			if (remotePlayer != null) remotePlayer.draw(g2);
+			localPlayer.draw(g2);
 
 			
 			// add stuff to HUD!!

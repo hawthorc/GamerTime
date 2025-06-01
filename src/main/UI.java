@@ -6,6 +6,9 @@ package main;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+
+import item.Key;
 
 public class UI {
 
@@ -13,6 +16,9 @@ public class UI {
 	Graphics2D g2;
 	// change the font, this works for now
 	Font tempScript;
+	
+	BufferedImage keyImage;
+	
 	public int commandNum = 0;
 	public int mainMenuState = 0;	// 1 = start server, 2 = join
 	
@@ -21,6 +27,8 @@ public class UI {
 		// random font from my system
 		// size doesn't work?
 		tempScript = new Font("Z003", Font.BOLD, 40);
+		Key key = new Key();
+		keyImage = key.image;
 	}
 
 	
@@ -36,9 +44,12 @@ public class UI {
 		}
 		// gameplay
 		if (gp.gameState == gp.play) {
-			// play the game
+			
+			g2.drawImage(keyImage, gp.tileSize/2, gp.tileSize/2, gp.tileSize, gp.tileSize, null);
+			g2.drawString("x " + gp.localPlayer.hasKey, 74, 65);
+			
 		// pause screen
-		} else if (gp.gameState == gp.paused) {
+		} else if (gp.gameState == gp.pause) {
 			drawPause();
 		}
 	}

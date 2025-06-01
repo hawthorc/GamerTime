@@ -49,11 +49,12 @@ public class NetworkHandler {
         if (client != null) {
         	if (!first) {
 	            try {
-	            	byte[] buf = new byte[4];
+	            	byte[] buf = new byte[5];
 	                buf[0] = (byte) (input.up ? 1 : 0);
 	                buf[1] = (byte) (input.down ? 1 : 0);
 	                buf[2] = (byte) (input.left ? 1 : 0);
 	                buf[3] = (byte) (input.right ? 1 : 0);
+	                buf[4] = (byte) (input.pause ? 1 : 0); 
 	                client.sendUpdate(buf);
 	            } catch (IOException e) {
 	                e.printStackTrace();
@@ -86,9 +87,13 @@ public class NetworkHandler {
             boolean down = buf[1] == 1;
             boolean left = buf[2] == 1;
             boolean right = buf[3] == 1;
-
-            System.out.println(up + ", " + down + ", " + left + ", " + right);
-            gp.updateRemotePlayer(up, down, left, right); 
+            boolean pause = buf[4] == 1;
+            
+            System.out.println(up + ", " + down + ", " + left + ", " + right + ", " + pause);
+            
+            if (pause && gp.gameState == gp.play) gp.gameState = gp.pause;
+            else if (pause && gp.gameState == gp.pause) gp.gameState = gp.play;
+            else gp.updateRemotePlayer(up, down, left, right); 
     	}    
     }
 

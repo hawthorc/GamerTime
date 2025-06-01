@@ -96,11 +96,15 @@ public class KeyHandler implements KeyListener{
 				break;
 				
 			case KeyEvent.VK_P:
-				if (gp.gameState == gp.play) gp.gameState = gp.paused;
+				/*if (gp.gameState == gp.play) {
+					pause = true;
+					gp.gameState = gp.paused;
+				}*/
+				gp.setPaused(!gp.paused);
 				break;
 			}
-		} else if (gp.gameState == gp.paused) {
-			if (key == KeyEvent.VK_P) gp.gameState = gp.play;
+		} else if (gp.gameState == gp.pause) {
+			if (key == KeyEvent.VK_P) gp.setPaused(!gp.paused);
 		}
 		
 

@@ -3,7 +3,6 @@
  */
 package entity;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
@@ -21,18 +20,28 @@ public class Player extends Entity {
 	
 	public final int screenX;
 	public final int screenY;
+	// determine if we are dealing with the local or remote player
+	public boolean local;
 	
-	private Color color;
+	public int hasKey = 0;
+	
 	private final double diagFactor = 1 / Math.sqrt(2);	// for vector normalization
 
 	
-	public Player(GamePanel gp, KeyHandler keyH, Color color) {
+	public Player(GamePanel gp, KeyHandler keyH, boolean local, boolean p1) {
 		this.gp = gp;
 		this.keyH = keyH;
-		screenX = gp.screenWidth/2 - (gp.tileSize/2);				// player position is based on top left corner, so subtract half a tile
-		screenY = gp.screenHeight/2 - (gp.tileSize/2);
+		this.local = local;
 		
-		//this.color = color;											// only use until sprites are added
+		// lock the local player sprite to the center of the screen, let the remote player move around
+		if (local) {
+			screenX = gp.screenWidth/2 - (gp.tileSize/2);				// player position is based on top left corner, so subtract half a tile
+			screenY = gp.screenHeight/2 - (gp.tileSize/2);
+		} else {
+			// default, don't use these
+			screenX = 0;
+			screenY = 0;
+		}
 		
 		// set the collision area of the sprite
 		// gp.tileSize = 48, so twoThirds = 32 (int)
@@ -40,10 +49,11 @@ public class Player extends Entity {
 		double tileSize = gp.tileSize;
 		int twoThirds = (int) Math.round(tileSize * (2.0 / 3.0));
 		solidArea = new Rectangle(gp.tileSize/6, gp.tileSize/3, twoThirds, twoThirds);
-		//solidArea = new Rectangle(8, 16, 32, 32);
+		solidAreaDefaultX = solidArea.x;
+		solidAreaDefaultY = solidArea.y;
 		
 		setDefaultValues();
-		getPlayerImage();
+		getPlayerImage(p1);
 	}
 	
 	
@@ -55,19 +65,37 @@ public class Player extends Entity {
 	}
 	
 	
-	public void getPlayerImage() {
-		try {
-			up1 = ImageIO.read(getClass().getResourceAsStream("/player/up1.png"));
-			up2 = ImageIO.read(getClass().getResourceAsStream("/player/up2.png"));
-			down1 = ImageIO.read(getClass().getResourceAsStream("/player/down1.png"));
-			down2 = ImageIO.read(getClass().getResourceAsStream("/player/down2.png"));
-			left1 = ImageIO.read(getClass().getResourceAsStream("/player/left1.png"));
-			left2 = ImageIO.read(getClass().getResourceAsStream("/player/left2.png"));
-			right1 = ImageIO.read(getClass().getResourceAsStream("/player/right1.png"));
-			right2 = ImageIO.read(getClass().getResourceAsStream("/player/right2.png"));
-			
-		}catch(IOException e) {
-			e.printStackTrace();
+	// set the player images based on if we are player 1 or 2
+	public void getPlayerImage(boolean p1) {
+		
+		if (p1) {
+			try {
+				up1 = ImageIO.read(getClass().getResourceAsStream("/player/p1_up1.png"));
+				up2 = ImageIO.read(getClass().getResourceAsStream("/player/p1_up2.png"));
+				down1 = ImageIO.read(getClass().getResourceAsStream("/player/p1_down1.png"));
+				down2 = ImageIO.read(getClass().getResourceAsStream("/player/p1_down2.png"));
+				left1 = ImageIO.read(getClass().getResourceAsStream("/player/p1_left1.png"));
+				left2 = ImageIO.read(getClass().getResourceAsStream("/player/p1_left2.png"));
+				right1 = ImageIO.read(getClass().getResourceAsStream("/player/p1_right1.png"));
+				right2 = ImageIO.read(getClass().getResourceAsStream("/player/p1_right2.png"));
+				
+			}catch(IOException e) {
+				e.printStackTrace();
+			}
+		} else {
+			try {
+				up1 = ImageIO.read(getClass().getResourceAsStream("/player/p2_up1.png"));
+				up2 = ImageIO.read(getClass().getResourceAsStream("/player/p2_up2.png"));
+				down1 = ImageIO.read(getClass().getResourceAsStream("/player/p2_down1.png"));
+				down2 = ImageIO.read(getClass().getResourceAsStream("/player/p2_down2.png"));
+				left1 = ImageIO.read(getClass().getResourceAsStream("/player/p2_left1.png"));
+				left2 = ImageIO.read(getClass().getResourceAsStream("/player/p2_left2.png"));
+				right1 = ImageIO.read(getClass().getResourceAsStream("/player/p2_right1.png"));
+				right2 = ImageIO.read(getClass().getResourceAsStream("/player/p2_right2.png"));
+				
+			}catch(IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -80,7 +108,7 @@ public class Player extends Entity {
 	
 	// update the remote player position based on input data
 	public void handleRemoteInput(boolean up, boolean down, boolean left, boolean right) {
-	    updateMovement(up, down, left, right);
+		updateMovement(up, down, left, right);
 	}
 	
 	
@@ -91,11 +119,17 @@ public class Player extends Entity {
 		if (up || down|| left || right) {
 			int xVec = 0;
 			int yVec = 0;
+			
 			// check tile collision
 			// change to check for left and right collision?
 			colliding = false;
 			gp.collisionH.checkTile(this, up, down, left, right);
-			// check tile will set collision to true if it detects solid tiles
+			
+			// item collision
+			int itemIndex = gp.collisionH.checkItem(this, up, down, left, right, true);
+			interact(itemIndex);
+			
+			// check tile and check item will set collision to true if it detects solid tiles
 			if (colliding == false) {
 				// switch statement instead? keep it like this for now in case we need to extra account for diagonal
 				if (up) {
@@ -134,35 +168,64 @@ public class Player extends Entity {
 		}
 	}
 	
+	
+	public void interact(int index) {
+		
+		// interact based on the item
+		// new items / interactions can be added as necessary
+		if (index >= 0) {
+			String itemName = gp.items[index].name;
+			
+			switch (itemName) {
+			case "Key":
+				hasKey++;
+				gp.items[index] = null;
+				break;
+			case "Door":
+				// for now, 1 key opens 1 door
+				// later add color coding?
+				if (hasKey > 0) {
+					gp.items[index] = null;
+					hasKey--;
+				}
+				break;
+			}
+		}
+	}
+	
 
 	public void draw(Graphics2D g2) {
-		g2.setColor(color);
+		//g2.setColor(color);
 		
 		BufferedImage image = null;
 		switch(direction) {
 		case "up":
-			if (spriteNum == 1) {
-				image = up1;
-			} else image = up2;
+			image = (spriteNum == 1) ? up1 : up2;
 			break;
 		case "down":
-			if (spriteNum == 1) {
-				image = down1;
-			} else image = down2;
+			image = (spriteNum == 1) ? down1 : down2;
 			break;
 		case "left":
-			if (spriteNum == 1) {
-				image = left1;
-			} else image = left2;
+			image = (spriteNum == 1) ? left1 : left2;
 			break;
 		case "right":
-			if (spriteNum == 1) {
-				image = right1;
-			} else image = right2;
+			image = (spriteNum == 1) ? right1 : right2;
 			break;
 		}
+		
+		int drawX, drawY;
+		
+		// local player stays in center screen, remote player uses world coordinates
+		if (local) {
+			drawX = screenX;
+			drawY = screenY;
+		} else {
+			drawX = worldX - gp.localPlayer.worldX + gp.screenWidth/2 - gp.tileSize/2;
+			drawY = worldY - gp.localPlayer.worldY + gp.screenHeight/2 - gp.tileSize/2;
+			
+		}
 		// player sprite
-		g2.drawImage(image, screenX, screenY, gp.tileSize, gp.tileSize, null);
+		g2.drawImage(image, drawX, drawY, gp.tileSize, gp.tileSize, null);
 		
 		// draw the collision rectangle
 		/*int collisionX = worldX + solidArea.x;

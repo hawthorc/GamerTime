@@ -103,15 +103,15 @@ public class TileHandler {
 			int worldY = worldRow * gp.tileSize;
 			// find where to draw each tile on the screen (map moves while player stays in center)
 			// use the player's central position to offset the tile drawing
-			int screenX = worldX - gp.player1.worldX + gp.player1.screenX;
-			int screenY = worldY - gp.player1.worldY + gp.player1.screenY;
+			int screenX = worldX - gp.localPlayer.worldX + gp.localPlayer.screenX;
+			int screenY = worldY - gp.localPlayer.worldY + gp.localPlayer.screenY;
 			
 			
 			// only draw tiles we can see
-			if (worldX + gp.tileSize > gp.player1.worldX - gp.player1.screenX &&
-				worldX - gp.tileSize < gp.player1.worldX + gp.player1.screenX &&
-				worldY + gp.tileSize > gp.player1.worldY - gp.player1.screenY &&
-				worldY - gp.tileSize < gp.player1.worldY + gp.player1.screenY) {
+			if (worldX + gp.tileSize > gp.localPlayer.worldX - gp.localPlayer.screenX &&
+				worldX - gp.tileSize < gp.localPlayer.worldX + gp.localPlayer.screenX &&
+				worldY + gp.tileSize > gp.localPlayer.worldY - gp.localPlayer.screenY &&
+				worldY - gp.tileSize < gp.localPlayer.worldY + gp.localPlayer.screenY) {
 				
 				g2.drawImage(tile[tileNum].image, screenX, screenY, gp.tileSize, gp.tileSize, null);
 			}
